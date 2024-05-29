@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import bcrypt from 'bcryptjs'
 
 export enum EUser {
     admin = 'admin',
@@ -6,7 +7,7 @@ export enum EUser {
     student = 'student'
 }
 
-interface IUser {
+export interface IUser {
     name: string,
     email: string,
     password: string,
@@ -56,6 +57,14 @@ const userModelSchema = new Schema<IUser>({
         select: false
     }
 }, { timestamps: true })
+
+userModelSchema.pre('save', async function (next) {
+    if (this.isModified('password')) {
+        const salt = bcrypt.genSaltSync(10);
+        this.password = bcrypt.hashSync(this.password, salt);
+    }
+    next();
+});
 
 const UserModel = model('User', userModelSchema)
 

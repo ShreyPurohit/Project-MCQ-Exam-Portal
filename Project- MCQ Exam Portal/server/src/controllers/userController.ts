@@ -1,11 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import asyncHandler from 'express-async-handler'
-import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import config from 'config'
 
 import { AppError } from "../middlewares/errorHandler";
 import { userRegisterValidation, userLoginValidation } from "../validations/userValidations";
+import passport from '../stratergies/local-stratergy'
 
 import UserModel from "../models/userModel";
+
+const JWT_SECRET: string = config.get('token_config.secret_key')
 
 // @desc Register User
 // @route POST /api/user/register
@@ -18,12 +22,8 @@ const registerUser = asyncHandler(async (req: Request, res: Response, next: Next
     const userExists = await UserModel.findOne({ email })
     if (userExists) throw new AppError("User Already Exists", 400)
 
-    const hashed_password = await bcrypt.hash(password, 10)
     const user = await UserModel.create({
-        name,
-        email,
-        password: hashed_password,
-        role
+        name, email, password, role
     })
     res.status(201).json({
         status: "Success",
@@ -37,30 +37,31 @@ const registerUser = asyncHandler(async (req: Request, res: Response, next: Next
 // @desc Login User
 // @route POST /api/user/login
 // @access public
-const loginUser = asyncHandler(async (req: any, res: Response, next: NextFunction) => {
-    const { email, password } = req.body
-    const { error } = userLoginValidation.validate(req.body)
-    if (error) throw new AppError("Invalid Credentials", 400)
-    const user = await UserModel.findOne({ email }).select('+password')
-    console.log(user);
-    if (user && (await bcrypt.compare(password, String(user.password)))) {
-        req.session.visited = true
-        res.status(200).cookie("Login_Cookie", "loggeddinn").json({
-            message: "Logged In Successfully"
+const loginUser = (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate('local', { session: false }, (err: any, user: any, info: string) => {
+        if (!user || err) { return res.status(400).json({ status: 'fail', info }) }
+        const accessToken = jwt.sign({
+            user: {
+                username: user.name,
+                email: user.email,
+                id: user.id,
+                role: user.role,
+            }
+        }, JWT_SECRET, { expiresIn: '1h' });
+        res.status(200).cookie('jwt', accessToken, { httpOnly: true , secure: true, maxAge: 60000 * 60, sameSite: 'none' }).json({
+            status: "Success",
+            message: "Logged In Successfully",
+            data: { accessToken }
         })
-        console.log(req.session);
-        console.log(req.session.id);
-    } else {
-        throw new AppError("Invalid Credentials Or Account Not Created..", 400)
-    }
-})
+    })(req, res, next);
+}
 
 // @desc Logout User Info
 // @route Post /api/user/logout
 // @access private
 const logoutUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.cookies.Login_Cookie) throw new AppError("Please Login First", 403)
-    res.status(200).clearCookie("Login_Cookie", { path: "/" }).json({
+    if (!req.cookies.jwt) throw new AppError("Please Login First", 403)
+    res.status(200).clearCookie("jwt", { path: "/" }).json({
         message: "Bye Bye"
     })
 })
