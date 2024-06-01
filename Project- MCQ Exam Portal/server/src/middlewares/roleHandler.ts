@@ -13,7 +13,6 @@ const restrictTo = (role: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const cookie = req.cookies.jwt
     if (!cookie) throw new AppError("Please Login First", 401)
-     
     try {
       const userObj = jwt.verify(cookie, config.get('token_config.secret_key')) as IJwtPayload
       if (String(userObj.user.role) === role) {

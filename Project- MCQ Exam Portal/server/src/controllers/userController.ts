@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import config from 'config'
 
 import { AppError } from "../middlewares/errorHandler";
-import { userRegisterValidation, userLoginValidation } from "../validations/userValidations";
+import { userRegisterValidation } from "../validations/userValidations";
 import passport from '../stratergies/local-stratergy'
 
 import UserModel from "../models/userModel";
@@ -42,13 +42,11 @@ const loginUser = (req: Request, res: Response, next: NextFunction) => {
         if (!user || err) { return res.status(400).json({ status: 'fail', info }) }
         const accessToken = jwt.sign({
             user: {
-                username: user.name,
-                email: user.email,
                 id: user.id,
                 role: user.role,
             }
-        }, JWT_SECRET, { expiresIn: '1h' });
-        res.status(200).cookie('jwt', accessToken, { httpOnly: true , secure: true, maxAge: 60000 * 60, sameSite: 'none' }).json({
+        }, JWT_SECRET, { expiresIn: '1hr' });
+        res.status(200).cookie('jwt', accessToken, { maxAge: 60000 * 60, sameSite: "none", secure: true }).json({
             status: "Success",
             message: "Logged In Successfully",
             data: { accessToken }
@@ -59,9 +57,8 @@ const loginUser = (req: Request, res: Response, next: NextFunction) => {
 // @desc Logout User Info
 // @route Post /api/user/logout
 // @access private
-const logoutUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.cookies.jwt) throw new AppError("Please Login First", 403)
-    res.status(200).clearCookie("jwt", { path: "/" }).json({
+const logoutUser = (async (req: Request, res: Response, next: NextFunction) => {
+    return res.status(200).clearCookie("jwt", { path: "/", sameSite: 'none', secure: true }).json({
         message: "Bye Bye"
     })
 })

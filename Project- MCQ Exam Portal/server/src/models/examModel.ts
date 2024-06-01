@@ -3,12 +3,11 @@ import { Schema, model, Types } from "mongoose";
 interface IExam {
     prof_id: Types.ObjectId,
     subject_name: string,
-    total_questions: number,
-    total_time: number,
-    scheduled_at: Date,
-    allocated_to: string[],
-    questions: string[],
-    answers: string[]
+    topic_name: string,
+    questions: [string],
+    scheduledAt: Date,
+    duration: number,
+    markPerQuestion: number
 }
 
 const examModelSchema = new Schema<IExam>({
@@ -17,29 +16,24 @@ const examModelSchema = new Schema<IExam>({
         ref: "User",
         required: true
     },
-    subject_name: {
-        type: Schema.Types.String,
-        required: [true, "Subject Name Is Required.."]
-    },
-    total_questions: {
-        type: Schema.Types.Number,
-        required: [true, "Total Questions Quantity Required.."]
-    },
-    total_time: {
-        type: Schema.Types.Number,
-        required: [true, "Total Time Required..(Enter In Minutes)"]
-    },
-    scheduled_at: {
-        type: Schema.Types.Date,
-        required: [true, "Schedule Date Required.."]
-    },
-    allocated_to: [{
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+    subject_name: { type: Schema.Types.String, required: true },
+    topic_name: { type: Schema.Types.String, required: true },
+    questions: [{
+        questionText: { type: Schema.Types.String, required: true },
+        options: [{
+            text: { type: Schema.Types.String, required: true },
+            isCorrect: { type: Schema.Types.Boolean, required: true }
+        }]
     }],
-    questions: [{ type: Schema.Types.String, select: false }],
-    answers: [{ type: Schema.Types.String, select: false }]
+    scheduledAt: {
+        type: Schema.Types.Date
+    },
+    duration: {
+        type: Schema.Types.Number
+    },
+    markPerQuestion: {
+        type: Schema.Types.Number
+    }
 }, { timestamps: true })
 
 const ExamModel = model('Exam', examModelSchema)

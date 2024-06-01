@@ -8,9 +8,4 @@ const userRegisterValidation = Joi.object({
     role: Joi.string().valid(EUser.admin, EUser.faculty, EUser.student).required()
 })
 
-const userLoginValidation = Joi.object({
-    email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }).required(),
-    password: Joi.string().min(6).required(),
-})
-
-export { userRegisterValidation, userLoginValidation }
+export { userRegisterValidation }

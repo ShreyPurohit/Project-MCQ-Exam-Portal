@@ -1,8 +1,10 @@
 import axios from "axios"
 import { ILoginForm } from "../../interfaces/userInterface"
+import { JwtPayload, jwtDecode } from "jwt-decode"
+import { useNavigate } from "react-router-dom"
 
 const LoginComponent: React.FC<ILoginForm> = ({ email, setEmail, password, setPassword }) => {
-
+    const navigate = useNavigate()
     const LoginUser = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         try {
@@ -10,7 +12,14 @@ const LoginComponent: React.FC<ILoginForm> = ({ email, setEmail, password, setPa
                 withCredentials: true,
                 headers: { 'Content-Type': "application/json" }
             })
-            console.log(result);
+            const decoded: any = jwtDecode<JwtPayload>(result.data.data.accessToken)
+
+            const role = decoded.user.role
+            if (role === 'faculty') {
+                navigate('/faculty')
+            } else if (role === 'student') {
+                navigate('/student')
+            }
         } catch (error) {
             console.error(error)
         }

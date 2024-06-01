@@ -8,18 +8,19 @@ import UserModel from '../models/userModel';
 const JWT_SECRET = config.get("token_config.secret_key");
 
 // Local Strategy
-passport.use(new LocalStrategy({ usernameField: 'email' }, async (username: string, password: string, done: any) => {
+passport.use(new LocalStrategy({ usernameField: 'email' }, async (username, password, done) => {
     try {
-        const user: any = await UserModel.findOne({ email: username }).select("+password");
+        const user = await UserModel.findOne({ email: username }).select('+password');
         if (!user) {
             return done(null, false, { message: 'User Not Found' });
         }
-        if (!bcrypt.compareSync(password, String(user.password))) {
+        const isMatch = bcrypt.compareSync(password, String(user.password));
+        if (!isMatch) {
             return done(null, false, { message: 'Incorrect Credentials.' });
         }
         return done(null, user);
     } catch (error) {
-        return done(error, null);
+        return done(error, false);
     }
 }));
 
@@ -29,7 +30,7 @@ const opts: any = {
     secretOrKey: JWT_SECRET
 };
 
-passport.use(new JwtStrategy(opts, async (jwt_payload: any, done: DoneCallback) => {
+passport.use(new JwtStrategy(opts, async (jwt_payload, done) => {
     try {
         const user = await UserModel.findById(jwt_payload.user.id);
         if (user) {
