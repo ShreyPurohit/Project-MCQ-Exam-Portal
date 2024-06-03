@@ -8,6 +8,8 @@ import { AppError, errorGiver } from "./middlewares/errorHandler";
 
 import UserRoutes from "./routes/userRoutes";
 import ExamRoutes from "./routes/examRoutes";
+import ResultRoutes from "./routes/resultRoutes";
+
 import restrictTo from "./middlewares/roleHandler";
 import authenticateJwt from "./middlewares/authenticatejwt";
 
@@ -25,7 +27,7 @@ app.use(
 app.use(cookieparser())
 app.use(express.urlencoded({ extended: false }))
 
-app.get("/", (req: any, res: Response) => {
+app.get("/", (req: Request, res: Response) => {
     res.status(200).send("Welcome To MCQ Exam Portal")
 })
 
@@ -33,8 +35,8 @@ app.use(passport.initialize())
 connectDB()
 
 app.use("/api/users", UserRoutes)
-
 app.use('/api/exams', authenticateJwt, restrictTo('faculty'), ExamRoutes)
+app.use('/api/result', authenticateJwt, restrictTo('student'), ResultRoutes)
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404))
